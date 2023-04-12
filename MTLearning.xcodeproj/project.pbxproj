@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C903292F29E56AA8002791EA /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C903292E29E56AA8002791EA /* Renderer.swift */; };
 		C9B0DB3129E3214F00ACB391 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B0DB3029E3214F00ACB391 /* AppDelegate.swift */; };
 		C9B0DB3329E3214F00ACB391 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B0DB3229E3214F00ACB391 /* ViewController.swift */; };
 		C9B0DB3529E3215100ACB391 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9B0DB3429E3215100ACB391 /* Assets.xcassets */; };
@@ -15,6 +16,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		C903292E29E56AA8002791EA /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		C9B0DB2D29E3214F00ACB391 /* MTLearning.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MTLearning.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9B0DB3029E3214F00ACB391 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C9B0DB3229E3214F00ACB391 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -60,6 +62,7 @@
 				C9B0DB3629E3215100ACB391 /* Main.storyboard */,
 				C9B0DB3929E3215100ACB391 /* MTLearning.entitlements */,
 				C9BC602D29E43E0300145E6A /* MTLfile.metal */,
+				C903292E29E56AA8002791EA /* Renderer.swift */,
 			);
 			path = MTLearning;
 			sourceTree = "<group>";
@@ -134,6 +137,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C903292F29E56AA8002791EA /* Renderer.swift in Sources */,
 				C9B0DB3329E3214F00ACB391 /* ViewController.swift in Sources */,
 				C9B0DB3129E3214F00ACB391 /* AppDelegate.swift in Sources */,
 				C9BC602E29E43E0300145E6A /* MTLfile.metal in Sources */,
