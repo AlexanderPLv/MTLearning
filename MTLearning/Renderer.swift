@@ -42,6 +42,7 @@ private extension Renderer {
             fatalError("Unable to create default Metal library")
         }
         let renderPipelineDescriptor = MTLRenderPipelineDescriptor()
+        renderPipelineDescriptor.vertexDescriptor = createVertexDescriptor()
         
         renderPipelineDescriptor.vertexFunction = library.makeFunction(
             name: "vertex_main"
@@ -57,23 +58,19 @@ private extension Renderer {
         } catch {
             fatalError("Error while creating render pipeline state: \(error)")
         }
-    
-        
-        
-        
     }
     
     func makeResources() {
-        var positions = [
-                SIMD2<Float>(-0.8,  0.4),
-                SIMD2<Float>( 0.4, -0.8),
-                SIMD2<Float>( 0.8,  0.8)
+        var vertexData: [Float] = [
+            //    x     y       r    g    b    a
+            -0.8,  0.4,    1.0, 0.0, 1.0, 1.0,
+             0.4, -0.8,    0.0, 1.0, 1.0, 1.0,
+             0.8,  0.8,    1.0, 1.0, 0.0, 1.0,
         ]
         vertexBuffer = device.makeBuffer(
-            bytes: &positions,
-            length: MemoryLayout<SIMD2<Float>>.stride * positions.count,
-            options: .storageModeShared
-        )
+            bytes: &vertexData,
+            length: MemoryLayout<Float>.stride * vertexData.count,
+            options: .storageModeShared)
     }
     
 }
@@ -94,7 +91,7 @@ extension Renderer: MTKViewDelegate{
 
 //MARK: - Graphics Pipeline
 
-extension Renderer {
+private extension Renderer {
  
     func drawTriangle() {
         guard let renderPassDescriptor = view.currentRenderPassDescriptor else { return }
@@ -119,10 +116,26 @@ extension Renderer {
             commandBuffer.commit()
     }
     
+    func createVertexDescriptor() -> MTLVertexDescriptor {
+        let vertexDescriptor = MTLVertexDescriptor()
+        
+        vertexDescriptor.attributes[0].format = .float2
+        vertexDescriptor.attributes[0].offset = 0
+        vertexDescriptor.attributes[0].bufferIndex = 0
+        
+        vertexDescriptor.attributes[1].format = .float4
+        vertexDescriptor.attributes[1].offset = MemoryLayout<Float>.stride * 2
+        vertexDescriptor.attributes[1].bufferIndex = 0
+        
+        vertexDescriptor.layouts[0].stride = MemoryLayout<Float>.stride * 6
+        
+        return vertexDescriptor
+    }
+    
 }
 
 //MARK: - Clear View Color
-extension Renderer {
+private extension Renderer {
     func clearColor(_ view: MTKView) {
         view.clearColor = MTLClearColor(
             red: 0.0, green: 0.5, blue: 1.0, alpha: 1.0
@@ -147,7 +160,7 @@ extension Renderer {
 
 //MARK: - ComputePipeline
 
-extension Renderer {
+private extension Renderer {
     
     func addArrays() {
         guard let library = device.makeDefaultLibrary() else {

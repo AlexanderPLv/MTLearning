@@ -8,16 +8,25 @@
 #include <metal_stdlib>
 using namespace metal;
 
-vertex float4 vertex_main(
-    device float2 const* positions [[buffer(0)]],
-    uint vertexID [[vertex_id]])
-{
-    float2 position = positions[vertexID];
-    return float4(position, 0.0, 1.0);
+struct VertexIn {
+    float2 position [[attribute(0)]];
+    float4 color    [[attribute(1)]];
+};
+
+struct VertexOut {
+    float4 position [[position]];
+    float4 color;
+};
+
+vertex VertexOut vertex_main(VertexIn in [[stage_in]]) {
+    VertexOut out;
+        out.position = float4(in.position, 0.0, 1.0);
+        out.color = in.color;
+        return out;
 }
 
-fragment float4 fragment_main(float4 position [[stage_in]]) {
-    return float4(1.0, 0.0, 0.0, 1.0);
+fragment float4 fragment_main(VertexOut in [[stage_in]]) {
+    return in.color;
 }
 
 kernel void add_two_values(constant float *inputsA [[buffer(0)]],
