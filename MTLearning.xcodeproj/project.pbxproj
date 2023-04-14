@@ -8,22 +8,26 @@
 
 /* Begin PBXBuildFile section */
 		C903292F29E56AA8002791EA /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C903292E29E56AA8002791EA /* Renderer.swift */; };
+		C9217F9B29E857A8004D6837 /* RenderingConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9217F9A29E857A8004D6837 /* RenderingConstants.swift */; };
 		C9B0DB3129E3214F00ACB391 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B0DB3029E3214F00ACB391 /* AppDelegate.swift */; };
 		C9B0DB3329E3214F00ACB391 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B0DB3229E3214F00ACB391 /* ViewController.swift */; };
 		C9B0DB3529E3215100ACB391 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9B0DB3429E3215100ACB391 /* Assets.xcassets */; };
 		C9B0DB3829E3215100ACB391 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = C9B0DB3629E3215100ACB391 /* Main.storyboard */; };
-		C9BC602E29E43E0300145E6A /* MTLfile.metal in Sources */ = {isa = PBXBuildFile; fileRef = C9BC602D29E43E0300145E6A /* MTLfile.metal */; };
+		C9BC602E29E43E0300145E6A /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = C9BC602D29E43E0300145E6A /* Shaders.metal */; };
+		C9E4D41829E95DED00340AB7 /* Simd+Ext.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9E4D41729E95DED00340AB7 /* Simd+Ext.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		C903292E29E56AA8002791EA /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
+		C9217F9A29E857A8004D6837 /* RenderingConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RenderingConstants.swift; sourceTree = "<group>"; };
 		C9B0DB2D29E3214F00ACB391 /* MTLearning.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MTLearning.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9B0DB3029E3214F00ACB391 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C9B0DB3229E3214F00ACB391 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		C9B0DB3429E3215100ACB391 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C9B0DB3729E3215100ACB391 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		C9B0DB3929E3215100ACB391 /* MTLearning.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MTLearning.entitlements; sourceTree = "<group>"; };
-		C9BC602D29E43E0300145E6A /* MTLfile.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = MTLfile.metal; sourceTree = "<group>"; };
+		C9BC602D29E43E0300145E6A /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
+		C9E4D41729E95DED00340AB7 /* Simd+Ext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Simd+Ext.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,6 +41,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		C9217F9C29E87C96004D6837 /* Renderer */ = {
+			isa = PBXGroup;
+			children = (
+				C903292E29E56AA8002791EA /* Renderer.swift */,
+				C9217F9A29E857A8004D6837 /* RenderingConstants.swift */,
+			);
+			path = Renderer;
+			sourceTree = "<group>";
+		};
 		C9B0DB2429E3214F00ACB391 = {
 			isa = PBXGroup;
 			children = (
@@ -56,15 +69,32 @@
 		C9B0DB2F29E3214F00ACB391 /* MTLearning */ = {
 			isa = PBXGroup;
 			children = (
+				C9E4D41629E95DDB00340AB7 /* Extensions */,
 				C9B0DB3029E3214F00ACB391 /* AppDelegate.swift */,
 				C9B0DB3229E3214F00ACB391 /* ViewController.swift */,
 				C9B0DB3429E3215100ACB391 /* Assets.xcassets */,
 				C9B0DB3629E3215100ACB391 /* Main.storyboard */,
 				C9B0DB3929E3215100ACB391 /* MTLearning.entitlements */,
-				C9BC602D29E43E0300145E6A /* MTLfile.metal */,
-				C903292E29E56AA8002791EA /* Renderer.swift */,
+				C9E4D41929E95EC700340AB7 /* Metal */,
+				C9217F9C29E87C96004D6837 /* Renderer */,
 			);
 			path = MTLearning;
+			sourceTree = "<group>";
+		};
+		C9E4D41629E95DDB00340AB7 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				C9E4D41729E95DED00340AB7 /* Simd+Ext.swift */,
+			);
+			path = Extensions;
+			sourceTree = "<group>";
+		};
+		C9E4D41929E95EC700340AB7 /* Metal */ = {
+			isa = PBXGroup;
+			children = (
+				C9BC602D29E43E0300145E6A /* Shaders.metal */,
+			);
+			path = Metal;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -137,10 +167,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C9E4D41829E95DED00340AB7 /* Simd+Ext.swift in Sources */,
 				C903292F29E56AA8002791EA /* Renderer.swift in Sources */,
+				C9217F9B29E857A8004D6837 /* RenderingConstants.swift in Sources */,
 				C9B0DB3329E3214F00ACB391 /* ViewController.swift in Sources */,
 				C9B0DB3129E3214F00ACB391 /* AppDelegate.swift in Sources */,
-				C9BC602E29E43E0300145E6A /* MTLfile.metal in Sources */,
+				C9BC602E29E43E0300145E6A /* Shaders.metal in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

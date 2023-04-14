@@ -9,6 +9,8 @@ import Foundation
 import Metal
 import MetalKit
 
+let MaxOutstandingFrameCount = 3
+
 class Renderer: NSObject {
     
     private let view: MTKView
@@ -17,11 +19,20 @@ class Renderer: NSObject {
     private let commandQueue: MTLCommandQueue
     private var renderPipelineState: MTLRenderPipelineState!
     private var vertexBuffer: MTLBuffer!
+    
+    private var renderingConstants: RenderingConstants
+    private var constantsBuffer: MTLBuffer!
+    
+    private var time: TimeInterval = 0.0
+    
+    private var frameSemaphore = DispatchSemaphore(value:
+        MaxOutstandingFrameCount)
  
     init(view: MTKView, device: MTLDevice) {
         self.view = view
         self.device = device
         self.commandQueue = device.makeCommandQueue()!
+        self.renderingConstants = RenderingConstants()
         super.init()
         view.device = device
         view.delegate = self
@@ -62,14 +73,17 @@ private extension Renderer {
     
     func makeResources() {
         var vertexData: [Float] = [
-            //    x     y       r    g    b    a
-            -0.8,  0.4,    1.0, 0.0, 1.0, 1.0,
-             0.4, -0.8,    0.0, 1.0, 1.0, 1.0,
-             0.8,  0.8,    1.0, 1.0, 0.0, 1.0,
+        //    x     y       r    g    b    a
+            -100,  -20,    1.0, 0.0, 1.0, 1.0,
+             100,  -60,    0.0, 1.0, 1.0, 1.0,
+              30,  100,    1.0, 1.0, 0.0, 1.0,
         ]
         vertexBuffer = device.makeBuffer(
             bytes: &vertexData,
             length: MemoryLayout<Float>.stride * vertexData.count,
+            options: .storageModeShared)
+        constantsBuffer = device.makeBuffer(
+            length: renderingConstants.constantsStride * MaxOutstandingFrameCount,
             options: .storageModeShared)
     }
     
@@ -82,9 +96,9 @@ extension Renderer: MTKViewDelegate{
     }
     
     func draw(in view: MTKView) {
-        //clearColor(view)
+        frameSemaphore.wait()
+        updateConstants()
         drawTriangle()
-        
     }
     
 }
@@ -106,14 +120,24 @@ private extension Renderer {
             offset: 0,
             index: 0
         )
+        renderCommandEncoder.setVertexBuffer(
+            constantsBuffer,
+            offset: renderingConstants.currentConstantBufferOffset,
+            index: 1
+        )
         renderCommandEncoder.drawPrimitives(
             type: .triangle,
             vertexStart: 0,
             vertexCount: 3
         )
         renderCommandEncoder.endEncoding()
-            commandBuffer.present(view.currentDrawable!)
-            commandBuffer.commit()
+        
+        commandBuffer.present(view.currentDrawable!)
+        commandBuffer.addCompletedHandler { [weak self] _ in
+                self?.frameSemaphore.signal()
+            }
+        commandBuffer.commit()
+        renderingConstants.frameIndex += 1
     }
     
     func createVertexDescriptor() -> MTLVertexDescriptor {
@@ -132,30 +156,58 @@ private extension Renderer {
         return vertexDescriptor
     }
     
-}
-
-//MARK: - Clear View Color
-private extension Renderer {
-    func clearColor(_ view: MTKView) {
-        view.clearColor = MTLClearColor(
-            red: 0.0, green: 0.5, blue: 1.0, alpha: 1.0
-        )
-        
-        let commandBuffer = commandQueue.makeCommandBuffer()!
-        
-        guard let renderPassDescriptor = view.currentRenderPassDescriptor else {
-            print("Didn't get a render pass descriptor from MTKView; dropping frame...")
-            return
-        }
-        let renderPassEncoder = commandBuffer.makeRenderCommandEncoder(
-            descriptor: renderPassDescriptor
-        )!
-        renderPassEncoder.endEncoding()
-        
-        
-        commandBuffer.present(view.currentDrawable!)
-        commandBuffer.commit()
+    func updateConstants() {
+        var transformMatrix = makeTransformMatrix()
+        renderingConstants.calculateCurrentOffset(with: MaxOutstandingFrameCount)
+        let constants = constantsBuffer.contents()
+            .advanced(by: renderingConstants.currentConstantBufferOffset)
+        constants.copyMemory(from: &transformMatrix,
+                             byteCount: renderingConstants.constantsSize)
     }
+    
+    func makeTransformMatrix() -> float4x4 {
+        let modelMatrix = makeModelMatrix()
+        let projectionMatrix = makeProjectionMatrix()
+        let transform = projectionMatrix * modelMatrix
+        return transform
+    }
+    
+    func makeProjectionMatrix() -> float4x4 {
+        let aspectRatio = Float(view.drawableSize.width / view.drawableSize.height)
+        let canvasWidth: Float = 800
+        let canvasHeight = canvasWidth / aspectRatio
+        let projectionMatrix = simd_float4x4(
+            orthographicProjectionWithLeft: -canvasWidth / 2,
+            top: canvasHeight / 2,
+            right: canvasWidth / 2,
+            bottom: -canvasHeight / 2,
+            near: 0.0,
+            far: 1.0
+        )
+        return projectionMatrix
+    }
+    
+    func makeModelMatrix() -> float4x4 {
+        time += 1.0 / Double(view.preferredFramesPerSecond)
+        let floatTime = Float(time)
+        
+        let pulseRate: Float = 1.5
+        let scaleFactor = 1.0 + 0.5 * cos(pulseRate * floatTime)
+        let scale = SIMD2<Float>(scaleFactor, scaleFactor)
+        let scaleMatrix = simd_float4x4(scale2D: scale)
+        
+        let rotationRate: Float = 2.5
+        let rotationAngle = rotationRate * floatTime
+        let rotationMatrix = simd_float4x4(rotateZ: rotationAngle)
+        
+        let orbitalRadius: Float = 200
+        let translation = orbitalRadius * SIMD2<Float>(cos(floatTime), sin(floatTime))
+        let translationMatrix = simd_float4x4(translate2D: translation)
+        
+        let modelMatrix = translationMatrix * rotationMatrix * scaleMatrix
+        return modelMatrix
+    }
+    
 }
 
 //MARK: - ComputePipeline
