@@ -20,7 +20,7 @@ struct VertexOut {
 
 vertex VertexOut vertex_main(
     VertexIn in [[stage_in]],
-    constant float4x4 &transform [[buffer(1)]]
+    constant float4x4 &transform [[buffer(2)]]
     ) {
     VertexOut out;
         out.position = transform * float4(in.position, 0.0, 1.0);
