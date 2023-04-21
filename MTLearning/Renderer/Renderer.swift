@@ -8,6 +8,7 @@
 import Foundation
 import Metal
 import MetalKit
+import ModelIO
 
 let MaxOutstandingFrameCount = 3
 
@@ -23,7 +24,7 @@ class Renderer: NSObject {
     private var renderingConstants: RenderingConstants
     private var constantsBuffer: MTLBuffer!
     
-    private let mesh: SimpleMesh
+    private var mesh: MTKMesh!
     
     private var time: TimeInterval = 0.0
     private var frameSemaphore = DispatchSemaphore(value:
@@ -34,11 +35,15 @@ class Renderer: NSObject {
         self.device = device
         self.commandQueue = device.makeCommandQueue()!
         self.renderingConstants = RenderingConstants()
-        self.mesh = SimpleMesh(indexedPlanarPolygonSideCount: 8,
-                               radius: 250,
-                               color: SIMD4<Float>(0.0, 0.5, 0.8, 1.0),
-                               device: device)
         super.init()
+        
+        let mdlMesh = createMDLMesh(with: device)
+        do {
+            mesh = try MTKMesh(mesh: mdlMesh, device: device)
+        } catch let error {
+            print(error.localizedDescription)
+        }
+        
         view.device = device
         view.delegate = self
         view.clearColor = MTLClearColor(red: 0.95,
@@ -58,7 +63,9 @@ private extension Renderer {
             fatalError("Unable to create default Metal library")
         }
         let renderPipelineDescriptor = MTLRenderPipelineDescriptor()
-        renderPipelineDescriptor.vertexDescriptor = mesh.vertexDescriptor
+        let vertexDescriptor =
+        MTKMetalVertexDescriptorFromModelIO(mesh.vertexDescriptor)!
+        renderPipelineDescriptor.vertexDescriptor = vertexDescriptor
         
         renderPipelineDescriptor.vertexFunction = library.makeFunction(
             name: "vertex_main"
@@ -84,6 +91,37 @@ private extension Renderer {
         constantsBuffer.label = "Dynamic Constant Buffer"
     }
     
+    func createMDLMesh(with device: MTLDevice) -> MDLMesh {
+        let allocator = MTKMeshBufferAllocator(device: device)
+        let mesh = MDLMesh(
+            sphereWithExtent: SIMD3<Float>(1, 1, 1),
+            segments: SIMD2<UInt32>(24, 24),
+            inwardNormals: false,
+            geometryType: .triangles,
+            allocator: allocator
+        )
+        let vertexDescriptor = createMDLVertexDescriptor()
+        mesh.vertexDescriptor = vertexDescriptor
+        
+        return mesh
+    }
+    
+    func createMDLVertexDescriptor() -> MDLVertexDescriptor {
+        let vertexDescriptor = MDLVertexDescriptor()
+        vertexDescriptor.vertexAttributes[0].name =
+            MDLVertexAttributePosition
+        vertexDescriptor.vertexAttributes[0].format = .float3
+        vertexDescriptor.vertexAttributes[0].offset = 0
+        vertexDescriptor.vertexAttributes[0].bufferIndex = 0
+        vertexDescriptor.vertexAttributes[1].name =
+            MDLVertexAttributeNormal
+        vertexDescriptor.vertexAttributes[1].format = .float3
+        vertexDescriptor.vertexAttributes[1].offset = 12
+        vertexDescriptor.vertexAttributes[1].bufferIndex = 0
+        vertexDescriptor.bufferLayouts[0].stride = 24
+        return vertexDescriptor
+    }
+    
 }
 
 extension Renderer: MTKViewDelegate{
@@ -95,7 +133,7 @@ extension Renderer: MTKViewDelegate{
     func draw(in view: MTKView) {
         frameSemaphore.wait()
         updateConstants()
-        drawSimpleMesh()
+        drawMesh()
     }
     
 }
@@ -104,36 +142,6 @@ extension Renderer: MTKViewDelegate{
 
 private extension Renderer {
     
-    func drawSimpleMesh() {
-        guard let renderPassDescriptor = view.currentRenderPassDescriptor else { return }
-        
-        guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
-        
-        let renderCommandEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
-        renderCommandEncoder.setRenderPipelineState(renderPipelineState)
-        
-        
-        
-        for (i, vertexBuffer) in mesh.vertexBuffers.enumerated() {
-            renderCommandEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: i)
-        }
-        renderCommandEncoder.setVertexBuffer(constantsBuffer, offset: renderingConstants.currentConstantBufferOffset, index: 2)
-        
-        renderCommandEncoder.drawIndexedPrimitives(type: mesh.primitiveType,
-                                                   indexCount: mesh.indexCount,
-                                                   indexType: mesh.indexType,
-                                                   indexBuffer: mesh.indexBuffer,
-                                                   indexBufferOffset: 0)
-        renderCommandEncoder.endEncoding()
-        
-        commandBuffer.present(view.currentDrawable!)
-        commandBuffer.addCompletedHandler { [weak self] _ in
-            self?.frameSemaphore.signal()
-        }
-        commandBuffer.commit()
-        
-        renderingConstants.frameIndex += 1
-    }
     
     func updateConstants() {
         var transformMatrix = makeTransformMatrix()
@@ -153,28 +161,63 @@ private extension Renderer {
     
     func makeProjectionMatrix() -> float4x4 {
         let aspectRatio = Float(view.drawableSize.width / view.drawableSize.height)
-        let canvasWidth: Float = 800
+        let canvasWidth: Float = 5.0
         let canvasHeight = canvasWidth / aspectRatio
-        let projectionMatrix = simd_float4x4(
-            orthographicProjectionWithLeft: -canvasWidth / 2,
-            top: canvasHeight / 2,
-            right: canvasWidth / 2,
-            bottom: -canvasHeight / 2,
-            near: 0.0,
-            far: 1.0
-        )
+        let projectionMatrix =
+        simd_float4x4(orthographicProjectionWithLeft: -canvasWidth / 2,
+                      top: canvasHeight / 2,
+                      right: canvasWidth / 2,
+                      bottom: -canvasHeight / 2,
+                      near: -1,
+                      far: 1)
         return projectionMatrix
     }
     
     func makeModelMatrix() -> float4x4 {
-        let floatTime = Float(time)
+        return matrix_identity_float4x4
+    }
+    
+    func drawMesh() {
+        guard let renderPassDescriptor = view.currentRenderPassDescriptor else { return }
         
-        let rotationRate: Float = 2.5
-        let rotationAngle = rotationRate * floatTime
-        let rotationMatrix = simd_float4x4(rotateZ: rotationAngle)
+        guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
         
-        let modelMatrix = rotationMatrix
-        return modelMatrix
+        let renderCommandEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
+        renderCommandEncoder.setRenderPipelineState(renderPipelineState)
+        
+        renderCommandEncoder.setFrontFacing(.counterClockwise)
+        renderCommandEncoder.setCullMode(.back)
+        
+        for (i, meshBuffer) in mesh.vertexBuffers.enumerated() {
+            renderCommandEncoder.setVertexBuffer(
+                meshBuffer.buffer,
+                offset: meshBuffer.offset,
+                index: i)
+        }
+        renderCommandEncoder.setVertexBuffer(
+            constantsBuffer,
+            offset: renderingConstants.currentConstantBufferOffset,
+            index: 2
+        )
+        for submesh in mesh.submeshes {
+            let indexBuffer = submesh.indexBuffer
+            renderCommandEncoder.drawIndexedPrimitives(
+                type: submesh.primitiveType,
+                indexCount: submesh.indexCount,
+                indexType: submesh.indexType,
+                indexBuffer: indexBuffer.buffer,
+                indexBufferOffset: indexBuffer.offset)
+        }
+        
+        renderCommandEncoder.endEncoding()
+        
+        commandBuffer.present(view.currentDrawable!)
+        commandBuffer.addCompletedHandler { [weak self] _ in
+            self?.frameSemaphore.signal()
+        }
+        commandBuffer.commit()
+        
+        renderingConstants.frameIndex += 1
     }
     
 }
