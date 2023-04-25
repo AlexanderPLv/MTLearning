@@ -19,10 +19,12 @@ class Renderer: NSObject {
     
     private let commandQueue: MTLCommandQueue
     private var renderPipelineState: MTLRenderPipelineState!
-    private var vertexBuffer: MTLBuffer!
     
     private var renderingConstants: RenderingConstants
     private var constantsBuffer: MTLBuffer!
+    
+    private let depthStencilDescriptor: MTLDepthStencilDescriptor
+    private let depthStencilState: MTLDepthStencilState
     
     private var mesh: MTKMesh!
     
@@ -35,6 +37,8 @@ class Renderer: NSObject {
         self.device = device
         self.commandQueue = device.makeCommandQueue()!
         self.renderingConstants = RenderingConstants()
+        self.depthStencilDescriptor = MTLDepthStencilDescriptor()
+        self.depthStencilState = device.makeDepthStencilState(descriptor: depthStencilDescriptor)!
         super.init()
         
         let mdlMesh = createMDLMesh(with: device)
@@ -43,13 +47,20 @@ class Renderer: NSObject {
         } catch let error {
             print(error.localizedDescription)
         }
+        depthStencilDescriptor.isDepthWriteEnabled = true
+        depthStencilDescriptor.depthCompareFunction = .less
+        
+        view.colorPixelFormat = .bgra8Unorm
+        view.depthStencilPixelFormat = .depth32Float
         
         view.device = device
         view.delegate = self
-        view.clearColor = MTLClearColor(red: 0.95,
-                                        green: 0.95,
-                                        blue: 0.95,
-                                        alpha: 1.0)
+        view.clearColor = MTLClearColor(
+            red: 0.95,
+            green: 0.95,
+            blue: 0.95,
+            alpha: 1.0
+        )
         makePipeline()
         makeResources()
     }
@@ -75,6 +86,7 @@ private extension Renderer {
         )!
         
         renderPipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
+        renderPipelineDescriptor.depthAttachmentPixelFormat = view.depthStencilPixelFormat
         
         do {
             renderPipelineState = try device.makeRenderPipelineState(descriptor: renderPipelineDescriptor)
@@ -183,7 +195,9 @@ private extension Renderer {
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
         
         let renderCommandEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
+        renderCommandEncoder.setDepthStencilState(depthStencilState)
         renderCommandEncoder.setRenderPipelineState(renderPipelineState)
+        
         
         renderCommandEncoder.setFrontFacing(.counterClockwise)
         renderCommandEncoder.setCullMode(.back)

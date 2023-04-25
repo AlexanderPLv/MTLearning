@@ -27,10 +27,9 @@ vertex VertexOut vertex_main(VertexIn in [[stage_in]],
 }
 
 fragment float4 fragment_main(VertexOut in [[stage_in]]) {
-    float3 L = normalize(float3(1, 1, 1));
     float3 N = normalize(in.normal);
-    float NdotL = saturate(dot(N, L));
-    return float4(float3(NdotL), 1);
+    float3 color = N * float3(0.5) + float3(0.5);
+    return float4(color, 1);
 }
 
 kernel void add_two_values(constant float *inputsA [[buffer(0)]],
