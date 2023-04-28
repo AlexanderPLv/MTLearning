@@ -23,7 +23,7 @@ final class ConstantBuffer {
 
     init() {
         self.frameIndex = 0
-        self.size = MemoryLayout<simd_float4x4>.size
+        self.size = MemoryLayout<NodeConstants>.size
         self.maxOutstandingFrameCount = 3
     }
     

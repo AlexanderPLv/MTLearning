@@ -9,8 +9,8 @@
 /* Begin PBXBuildFile section */
 		C903292F29E56AA8002791EA /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C903292E29E56AA8002791EA /* Renderer.swift */; };
 		C9217F9B29E857A8004D6837 /* ConstantBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9217F9A29E857A8004D6837 /* ConstantBuffer.swift */; };
-		C986450B29E9BB3900317F01 /* SimpleMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = C986450A29E9BB3900317F01 /* SimpleMesh.swift */; };
-		C986450D29E9C02400317F01 /* SimpleMeshResources.swift in Sources */ = {isa = PBXBuildFile; fileRef = C986450C29E9C02400317F01 /* SimpleMeshResources.swift */; };
+		C987A86929FA87A100FBB1E7 /* Node.swift in Sources */ = {isa = PBXBuildFile; fileRef = C987A86829FA87A100FBB1E7 /* Node.swift */; };
+		C987A86B29FAA28200FBB1E7 /* NodeConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = C987A86A29FAA28200FBB1E7 /* NodeConstants.swift */; };
 		C9B0DB3129E3214F00ACB391 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B0DB3029E3214F00ACB391 /* AppDelegate.swift */; };
 		C9B0DB3329E3214F00ACB391 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9B0DB3229E3214F00ACB391 /* ViewController.swift */; };
 		C9B0DB3529E3215100ACB391 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C9B0DB3429E3215100ACB391 /* Assets.xcassets */; };
@@ -23,8 +23,8 @@
 /* Begin PBXFileReference section */
 		C903292E29E56AA8002791EA /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		C9217F9A29E857A8004D6837 /* ConstantBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConstantBuffer.swift; sourceTree = "<group>"; };
-		C986450A29E9BB3900317F01 /* SimpleMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleMesh.swift; sourceTree = "<group>"; };
-		C986450C29E9C02400317F01 /* SimpleMeshResources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleMeshResources.swift; sourceTree = "<group>"; };
+		C987A86829FA87A100FBB1E7 /* Node.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Node.swift; sourceTree = "<group>"; };
+		C987A86A29FAA28200FBB1E7 /* NodeConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NodeConstants.swift; sourceTree = "<group>"; };
 		C9B0DB2D29E3214F00ACB391 /* MTLearning.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MTLearning.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C9B0DB3029E3214F00ACB391 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C9B0DB3229E3214F00ACB391 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -56,13 +56,13 @@
 			path = Renderer;
 			sourceTree = "<group>";
 		};
-		C986450E29EA988D00317F01 /* SimpleMesh */ = {
+		C987A86729FA879700FBB1E7 /* Node */ = {
 			isa = PBXGroup;
 			children = (
-				C986450A29E9BB3900317F01 /* SimpleMesh.swift */,
-				C986450C29E9C02400317F01 /* SimpleMeshResources.swift */,
+				C987A86829FA87A100FBB1E7 /* Node.swift */,
+				C987A86A29FAA28200FBB1E7 /* NodeConstants.swift */,
 			);
-			path = SimpleMesh;
+			path = Node;
 			sourceTree = "<group>";
 		};
 		C9B0DB2429E3214F00ACB391 = {
@@ -84,6 +84,7 @@
 		C9B0DB2F29E3214F00ACB391 /* MTLearning */ = {
 			isa = PBXGroup;
 			children = (
+				C987A86729FA879700FBB1E7 /* Node */,
 				C9E4D41629E95DDB00340AB7 /* Extensions */,
 				C9B0DB3029E3214F00ACB391 /* AppDelegate.swift */,
 				C9B0DB3229E3214F00ACB391 /* ViewController.swift */,
@@ -92,7 +93,6 @@
 				C9B0DB3929E3215100ACB391 /* MTLearning.entitlements */,
 				C9E4D41929E95EC700340AB7 /* Metal */,
 				C9217F9C29E87C96004D6837 /* Renderer */,
-				C986450E29EA988D00317F01 /* SimpleMesh */,
 			);
 			path = MTLearning;
 			sourceTree = "<group>";
@@ -185,12 +185,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				C9E4D41829E95DED00340AB7 /* Simd+Ext.swift in Sources */,
-				C986450B29E9BB3900317F01 /* SimpleMesh.swift in Sources */,
 				C903292F29E56AA8002791EA /* Renderer.swift in Sources */,
 				C9217F9B29E857A8004D6837 /* ConstantBuffer.swift in Sources */,
+				C987A86929FA87A100FBB1E7 /* Node.swift in Sources */,
 				C9B0DB3329E3214F00ACB391 /* ViewController.swift in Sources */,
 				C9B0DB3129E3214F00ACB391 /* AppDelegate.swift in Sources */,
-				C986450D29E9C02400317F01 /* SimpleMeshResources.swift in Sources */,
+				C987A86B29FAA28200FBB1E7 /* NodeConstants.swift in Sources */,
 				C9B3886229F2C86400FD0B05 /* MDLVertexDescriptor+Ext.swift in Sources */,
 				C9BC602E29E43E0300145E6A /* Shaders.metal in Sources */,
 			);
