@@ -9,5 +9,4 @@ import simd
 
 struct NodeConstants {
     var modelViewProjectionMatrix: float4x4
-    var color: SIMD4<Float>
 }

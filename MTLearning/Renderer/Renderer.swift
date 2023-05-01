@@ -14,19 +14,21 @@ class Renderer: NSObject {
 
     private let view: MTKView
     private let device: MTLDevice
-
-    private let commandQueue: MTLCommandQueue
-    private var renderPipelineState: MTLRenderPipelineState!
+    
     private var vertexDescriptor: MTLVertexDescriptor!
-    private var constantBuffer: ConstantBuffer
-
+    private var textureDescriptor: MTLTextureDescriptor!
     private let depthStencilDescriptor: MTLDepthStencilDescriptor
+    
+    private let commandQueue: MTLCommandQueue
+    private var constantBuffer: ConstantBuffer
+    
     private let depthStencilState: MTLDepthStencilState
+    private var samplerState: MTLSamplerState!
+    private var renderPipelineState: MTLRenderPipelineState!
 
-    private var sunNode: Node!
-    private var earthNode: Node!
-    private var moonNode: Node!
-    private var nodes = [Node]()
+    var nodes = [Node]()
+    var boxNode: Node!
+    var sphereNode: Node!
 
     private var time: TimeInterval = 0.0
     private var frameSemaphore: DispatchSemaphore
@@ -42,7 +44,7 @@ class Renderer: NSObject {
         self.depthStencilState = device.makeDepthStencilState(descriptor: depthStencilDescriptor)!
         self.frameSemaphore = DispatchSemaphore(value: constantBuffer.maxOutstandingFrameCount)
         super.init()
-
+        
         view.colorPixelFormat = .bgra8Unorm
         view.depthStencilPixelFormat = .depth32Float
 
@@ -61,6 +63,35 @@ class Renderer: NSObject {
 }
 
 private extension Renderer {
+    
+    func makeTexture(device: MTLDevice) -> MTLTexture? {
+        let texture = device.makeTexture(descriptor: textureDescriptor)
+        return texture
+    }
+    
+    func loadTexture(device: MTLDevice) -> MTLTexture? {
+        let textureLoader = MTKTextureLoader(device: device)
+        let options: [MTKTextureLoader.Option : Any] = [
+            .textureUsage : MTLTextureUsage.shaderRead.rawValue,
+            .textureStorageMode : MTLStorageMode.private.rawValue
+        ]
+        let texture = try? textureLoader.newTexture(name: "uvGrid",
+                                                scaleFactor: 1.0,
+                                                bundle: nil,
+                                                options: options)
+        return texture
+    }
+    
+    func setupSampleDescriptor() {
+        let samplerDescriptor = MTLSamplerDescriptor()
+        samplerDescriptor.normalizedCoordinates = true
+        samplerDescriptor.magFilter = .linear
+        samplerDescriptor.minFilter = .linear
+        samplerDescriptor.mipFilter = .nearest
+        samplerDescriptor.sAddressMode = .repeat
+        samplerDescriptor.tAddressMode = .repeat
+        samplerState = device.makeSamplerState(descriptor: samplerDescriptor)!
+    }
 
     func makePipeline() {
         guard let library = device.makeDefaultLibrary() else {
@@ -84,6 +115,7 @@ private extension Renderer {
         } catch {
             fatalError("Error while creating render pipeline state: \(error)")
         }
+        setupSampleDescriptor()
     }
 
     func makeResources() {
@@ -96,23 +128,16 @@ private extension Renderer {
     }
 
     func allocateMesh() {
+        var texture = loadTexture(device: device)
         let mdlVertexDescriptor = createMDLVertexDescriptor()
         do {
             let sphere = try createMtkMesh(with: device, vertexDescriptor: mdlVertexDescriptor, mdlSphereMesh)
-
-            sunNode = Node(mesh: sphere)
-            sunNode.color = SIMD4<Float>(1, 1, 0, 1)
-
-            earthNode = Node(mesh: sphere)
-            earthNode.color = SIMD4<Float>(0, 0.4, 0.9, 1)
-
-            moonNode = Node(mesh: sphere)
-            moonNode.color = SIMD4<Float>(0.7, 0.7, 0.7, 1)
-
-            sunNode.addChildNode(earthNode)
-            earthNode.addChildNode(moonNode)
-
-            nodes = [sunNode, earthNode, moonNode]
+            let box = try createMtkMesh(with: device, vertexDescriptor: mdlVertexDescriptor, mdlCubeMesh)
+            sphereNode = Node(mesh: sphere)
+            sphereNode.texture = texture
+            boxNode = Node(mesh: box)
+            boxNode.texture = texture
+            nodes = [boxNode, sphereNode]
 
             vertexDescriptor = try MTKMetalVertexDescriptorFromModelIOWithError(mdlVertexDescriptor)
         } catch let error {
@@ -141,7 +166,7 @@ private extension Renderer {
         let mesh = MDLMesh(
             sphereWithExtent: SIMD3<Float>(1, 1, 1),
             segments: SIMD2<UInt32>(24, 24),
-            inwardNormals: false,
+            inwardNormals: true,
             geometryType: .triangles,
             allocator: allocator
         )
@@ -152,7 +177,7 @@ private extension Renderer {
     func mdlCubeMesh(with device: MTLDevice, vertexDescriptor: MDLVertexDescriptor) -> MDLMesh {
         let allocator = MTKMeshBufferAllocator(device: device)
         let mesh = MDLMesh(
-            boxWithExtent: SIMD3<Float>(1.3, 1.3, 1.3),
+            boxWithExtent: SIMD3<Float>(1.4, 1.4, 1.4),
             segments: SIMD3<UInt32>(1, 1, 1),
             inwardNormals: false,
             geometryType: .triangles,
@@ -169,12 +194,20 @@ private extension Renderer {
         vertexDescriptor.vertexAttributes[0].format = .float3
         vertexDescriptor.vertexAttributes[0].offset = 0
         vertexDescriptor.vertexAttributes[0].bufferIndex = 0
+        
         vertexDescriptor.vertexAttributes[1].name =
             MDLVertexAttributeNormal
         vertexDescriptor.vertexAttributes[1].format = .float3
         vertexDescriptor.vertexAttributes[1].offset = 12
         vertexDescriptor.vertexAttributes[1].bufferIndex = 0
-        vertexDescriptor.bufferLayouts[0].stride = 24
+        
+        vertexDescriptor.vertexAttributes[2].name =
+            MDLVertexAttributeTextureCoordinate
+        vertexDescriptor.vertexAttributes[2].format = .float2
+        vertexDescriptor.vertexAttributes[2].offset = 24
+        vertexDescriptor.vertexAttributes[2].bufferIndex = 0
+        
+        vertexDescriptor.bufferLayouts[0].stride = 32
         return vertexDescriptor
     }
 
@@ -202,23 +235,16 @@ private extension Renderer {
 
         time += (1.0 / Double(view.preferredFramesPerSecond))
         let angle = Float(time)
-
-        let yAxis = SIMD3<Float>(0, 1, 0)
-        let earthRadius: Float = 0.3
-        let earthOrbitalRadius: Float = 2
-        earthNode.transform = rotate(about: yAxis, by: angle) *
-        translate(by: earthOrbitalRadius) *
-        scale(by: earthRadius)
-
-        let moonOrbitalRadius: Float = 2
-        let moonRadius: Float = 0.15
-        moonNode.transform = rotate(about: yAxis, by: angle * 2) *
-        translate(by: moonOrbitalRadius) *
-        scale(by: moonRadius)
-
+        
+        let rotationAxis = normalize(SIMD3<Float>(0.3, 0.7, 0.1))
+        let rotation = rotate(about: rotationAxis, by: angle)
+        
+        boxNode.transform = translate(by: -2) * rotation
+        sphereNode.transform = translate(by: 2) * rotation
+    
         for (objectIndex, node) in nodes.enumerated() {
             let transformMatrix = makeTransformMatrix(with: node.worldTransform)
-            var constants = NodeConstants(modelViewProjectionMatrix: transformMatrix, color: node.color)
+            var constants = NodeConstants(modelViewProjectionMatrix: transformMatrix)
 
             let offset = constantBuffer.calculateBufferOffset(by: objectIndex)
             let constantsPointer = constantBuffer.buffer.contents().advanced(by: offset)
@@ -251,6 +277,9 @@ private extension Renderer {
                                                      offset: meshBuffer.offset,
                                                      index: i)
             }
+            
+            renderCommandEncoder.setFragmentTexture(node.texture, index: 0)
+            renderCommandEncoder.setFragmentSamplerState(samplerState, index: 0)
 
             for submesh in mesh.submeshes {
                 let indexBuffer = submesh.indexBuffer
@@ -300,14 +329,6 @@ private extension Renderer {
         let projectionMatrix = makeProjectionMatrix()
         let transform = projectionMatrix * viewMatrix * worldMatrix
         return transform
-    }
-
-    func makeChildTransformMatrix(
-        rotate: float4x4,
-        translate: float4x4,
-        scale: float4x4
-    ) -> float4x4 {
-        rotate * translate * scale
     }
 
     func makeProjectionMatrix() -> float4x4 {

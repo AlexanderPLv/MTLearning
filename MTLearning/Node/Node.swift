@@ -10,7 +10,7 @@ import MetalKit
 final class Node {
     
     var mesh: MTKMesh?
-    var color = SIMD4<Float>(1, 1, 1, 1)
+    var texture: MTLTexture?
     var transform: simd_float4x4 = matrix_identity_float4x4
     
     weak var parentNode: Node?
